@@ -7,6 +7,7 @@
 
 #include <filesystem>
 #include "Utils.h"
+#include "Startup.h"
 #if defined(_WIN32)
 #include <shlobj_core.h>
 #elif defined(__linux__)
@@ -25,6 +26,7 @@
 
 int TraceBack = 0;
 beammp_fs_string GameDir;
+std::filesystem::path GamePathOverride;
 
 void lowExit(int code) {
     TraceBack = 0;
@@ -161,6 +163,25 @@ void FileList(std::vector<std::string>& a, const std::string& Path) {
     }
 }
 void LegitimacyCheck() {
+    if (!GamePathOverride.empty()) {
+        if (!std::filesystem::exists(GamePathOverride / "integrity.json")) {
+            error("Configured GamePath does not contain integrity.json: " + GamePathOverride.string());
+            throw std::runtime_error("Configured GamePath is invalid: " + GamePathOverride.string());
+        }
+        std::string s = GamePathOverride.string();
+#if defined(_WIN32)
+        if (s.empty() || (s.back() != '\\' && s.back() != '/')) {
+            s.push_back('\\');
+        }
+#else
+        if (s.empty() || s.back() != '/') {
+            s.push_back('/');
+        }
+#endif
+        GameDir = s;
+        info(beammp_wide("Using configured GamePath override: ") + beammp_fs_string(s));
+        return;
+    }
 #if defined(_WIN32)
     wchar_t* appDataPath = new wchar_t[MAX_PATH];
     HRESULT result = SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, appDataPath);

@@ -92,6 +92,12 @@ void InitOptions(int argc, const char *argv[], Options &options) {
             }
             options.user_path = argv[i + 1];
             i++;
+        } else if (argument == "--game-path") {
+            if (i + 1 >= argc) {
+                error("You must specify a path after the `--game-path` argument");
+            }
+            options.game_path = argv[i + 1];
+            i++;
         } else if (argument == "--" || argument == "--game") {
             options.game_arguments = &argv[i + 1];
             options.game_arguments_length = argc - i - 1;
@@ -108,6 +114,7 @@ void InitOptions(int argc, const char *argv[], Options &options) {
                 "\t--no-launch          Skip launching the game (you must launch the game manually)\n"
                 "\t--dev                Developer mode, same as --verbose --no-download --no-launch --no-update\n"
                 "\t--user-path <path>   Path to BeamNG's User Path\n"
+                "\t--game-path <path>   Override the game installation directory\n"
                 "\t--game <args...>     Passes ALL following arguments to the game, see also `--`\n"
                 << std::flush;
             exit(0);

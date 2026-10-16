@@ -7,11 +7,16 @@
 #include "Logger.h"
 #include "Network/network.hpp"
 #include "Options.h"
+#include "Startup.h"
 #include "Utils.h"
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#if defined(__linux__)
+#include <pwd.h>
+#include <unistd.h>
+#endif
 namespace fs = std::filesystem;
 
 std::string Branch;
@@ -35,6 +40,31 @@ void ParseConfig(const nlohmann::json& d) {
     if (d.contains("CachingDirectory") && d["CachingDirectory"].is_string()) {
         CachingDirectory = std::filesystem::path(d["CachingDirectory"].get<std::string>());
         info(beammp_wide("Mod caching directory: ") + beammp_fs_string(CachingDirectory.relative_path()));
+    }
+
+    if (d.contains("GamePath") && d["GamePath"].is_string()) {
+        std::string g = d["GamePath"].get<std::string>();
+        if (!g.empty() && g[0] == '~') {
+            const char* home = nullptr;
+#if defined(_WIN32)
+            home = std::getenv("USERPROFILE");
+#else
+            struct passwd* pw = getpwuid(getuid());
+            if (pw) home = pw->pw_dir;
+#endif
+            if (g == "~") {
+                if (home) g = home;
+            } else if (g.rfind("~/", 0) == 0) {
+                if (home) g = std::string(home) + g.substr(1);
+            }
+        }
+        if (g.empty()) {
+            GamePathOverride.clear();
+            info("GamePath is empty; using automatic game detection.");
+        } else {
+            GamePathOverride = std::filesystem::path(g);
+            info("Override game directory from Launcher.cfg (GamePath): " + GamePathOverride.string());
+        }
     }
 
     if (d.contains("Dev") && d["Dev"].is_boolean()) {
@@ -73,7 +103,8 @@ void ConfigInit() {
                 R"({
     "Port": 4444,
     "Build": "Default",
-    "CachingDirectory": "./Resources"
+    "CachingDirectory": "./Resources",
+    "GamePath": ""
 })";
             cfg.close();
         } else {
