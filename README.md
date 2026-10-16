@@ -9,7 +9,7 @@ The launcher is the way we communitcate to outside the game, it does a few autom
 
 BeamMP-Launcher searches for BeamNG.drive installed by steam, this means it won't work with any installation outside of steam.
 
-This fork adds a GamePath variable to Launcher.config, so that the user can specify where their game is installed.
+This fork adds a GamePath variable to Launcher.config, and a CLI switch, so that the user can specify where their game is installed.
 
 The alternative is symlinking your installation to a steamlibrary directory, and adding the appid to libraryfolders.vdf every time steam rewrites it.
 
@@ -35,9 +35,19 @@ Example config:
 
 ### vcpkg built in 
 
-Considering serving vcpkg in this repository as a submodule so end users would not need to install `vcpkg` separately; it is technically feasible and would make builds self-contained, but it adds a very large amount of tracking overhead to the source tree, so for now vcpkg remains an documented dependency and a `-bin`  release may be available as a separate option. Contributions splitting into a self-contained build are welcome.
+Now includes a vcpkg pre-built binary (stripped ~9MB), no more `vcpkg` dependency.
 
+### Install on Arch Linux (AUR):
 
+```sh
+yay -S beammp-launcher4linux
+# or
+paru -S beammp-launcher4linux
+# or
+git clone https://aur.archlinux.org/beammp-launcher4linux.git
+cd beammp-launcher4linux
+makepkg -si
+```
 
 ## License
 
