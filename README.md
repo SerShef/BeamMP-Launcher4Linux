@@ -45,19 +45,20 @@ cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpk
 cmake --build build --parallel
 ```
 
-Windows:
+Windows (tested with wine):
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static
 cmake --build build --config Release --parallel
 ```
 
-macOS (run via CrossOver/Wine - not officially supported):
+macOS (run via CrossOver/Wine - not officially supported by developers and I'm unable to test) _Open an issue if there are failures building_:
 ```sh
 cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=arm64-osx
 cmake --build build --config Release --parallel
 ```
 
 BeamNG.drive is not supported on macOS but can be run using CrossOver/Whisky (Wine).
+
 Set `GamePath` in `Launcher.cfg` for BeamMP to work, same as Linux.
 
 ### Launcher.cfg location
