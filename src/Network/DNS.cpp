@@ -9,10 +9,11 @@
 
 #if defined(_WIN32)
 #include <winsock2.h>
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__APPLE__)
 #include "linuxfixes.h"
 #include <arpa/inet.h>
 #include <netdb.h>
+#endif
 #endif
 
 #include "Logger.h"
