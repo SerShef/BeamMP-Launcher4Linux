@@ -33,17 +33,11 @@ Example config:
 
 ```
 
-### vcpkg vs prebuilt
+### Prebuilt vcpkg included
 
-The prebuilt binaries (GitHub releases, AUR `beammp-launcher4linux`) are built
-using vcpkg and statically link all dependencies, so you do **not** need vcpkg
-to run them.
+Binaries under [releases](https://github.com/SerShef/BeamMP-Launcher4Linux/releases) and [AUR](https://aur.archlinux.org/packages/beammp-launcher4linux) include vcpkg as a prebuilt binary, so no package or build dependency. 
 
-The `-DCMAKE_TOOLCHAIN_FILE=.../vcpkg.cmake` switch is only for building from
-source: it tells CMake to use vcpkg's toolchain to fetch and compile the C++
-dependencies (openssl, zlib, curl, cpp-httplib, nlohmann-json) and link them in.
-
-### Building from source
+### Build
 
 Linux:
 ```sh
@@ -57,15 +51,14 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\s
 cmake --build build --config Release --parallel
 ```
 
-macOS (run via CrossOver/Wine - no native BeamNG.drive on Mac):
+macOS (run via CrossOver/Wine - not officially supported):
 ```sh
 cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=arm64-osx
 cmake --build build --config Release --parallel
 ```
 
-BeamNG.drive has no native macOS build; run it through CrossOver or Whisky (Wine).
-Because CrossOver/Wine use their own directory layout, the game path cannot be
-auto-detected there - set `GamePath` in `Launcher.cfg` manually.
+BeamNG.drive is not supported on macOS but can be run using CrossOver/Whisky (Wine).
+Set `GamePath` in `Launcher.cfg` for BeamMP to work, same as Linux.
 
 ### Launcher.cfg location
 
@@ -97,18 +90,6 @@ by the Free Software Foundation, either version 3 of the License, or
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-### Building
-
-Linux:
-`cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=/opt/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release`, then  `cmake --build build`
-
-Windows:
-`cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static` then build.
-
-MacOS:
-(Not supported - originally this was a Linux-only fork; macOS build would require additional vcpkg configuration.)
-
-CI actions can do release building (Release-all-bin workflow).
 
 GNU Affero General Public License for more details.
 
