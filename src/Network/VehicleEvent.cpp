@@ -13,13 +13,17 @@
 
 #if defined(_WIN32)
 #include <ws2tcpip.h>
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__APPLE__)
 #include <arpa/inet.h>
 #include <cstring>
 #include <errno.h>
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#endif
+
+#if !defined(_WIN32)
+#define WSAGetLastError() errno
 #endif
 
 #include "Network/network.hpp"
