@@ -168,18 +168,18 @@ void LegitimacyCheck() {
             error("Configured GamePath does not contain integrity.json: " + GamePathOverride.string());
             throw std::runtime_error("Configured GamePath is invalid: " + GamePathOverride.string());
         }
-        std::string s = GamePathOverride.string();
+        beammp_fs_string s = GamePathOverride;
 #if defined(_WIN32)
-        if (s.empty() || (s.back() != '\\' && s.back() != '/')) {
-            s.push_back('\\');
+        if (s.empty() || (s.back() != beammp_wide('\\') && s.back() != beammp_wide('/'))) {
+            s.push_back(beammp_wide('\\'));
         }
 #else
-        if (s.empty() || s.back() != '/') {
-            s.push_back('/');
+        if (s.empty() || s.back() != beammp_wide('/')) {
+            s.push_back(beammp_wide('/'));
         }
 #endif
         GameDir = s;
-        info(beammp_wide("Using configured GamePath override: ") + beammp_fs_string(s));
+        info(beammp_wide("Using configured GamePath override: ") + s);
         return;
     }
 #if defined(_WIN32)
