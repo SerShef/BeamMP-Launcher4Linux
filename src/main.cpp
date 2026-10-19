@@ -43,6 +43,10 @@ int main(int argc, const char** argv) try {
     InitLog();
     ConfigInit();
     InitOptions(argc, argv, options);
+    if (options.game_path) {
+        GamePathOverride = options.game_path;
+        info("Using GamePath override from command line: " + GamePathOverride.string());
+    }
     InitLauncher();
 
     info("IMPORTANT: You MUST keep this window open to play BeamMP!");

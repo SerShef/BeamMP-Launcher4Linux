@@ -18,7 +18,7 @@ jobs:
         uses: lukka/run-vcpkg@v7
         id: runvcpkg
         with:
-            vcpkgArguments: 'discord-rpc zlib nlohmann-json openssl cpp-httplib[openssl]'
+            vcpkgArguments: 'zlib nlohmann-json openssl cpp-httplib[openssl]'
             vcpkgDirectory: '${{ runner.workspace }}/b/vcpkg'
             vcpkgGitCommitId: 'b5d1a94fb7f88fd835e360fd23a45a09ceedbf48'
             vcpkgTriplet: 'x64-windows-static'
