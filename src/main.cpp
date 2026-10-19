@@ -26,9 +26,9 @@ Options options;
 
 int main(int argc, const char** argv) try {
 #if defined(_WIN32)
-    system("cls");
-#elif defined(__linux__)
-    system("clear");
+    (void)system("cls");
+#elif defined(__linux__) || defined(__APPLE__)
+    (void)system("clear");
 #endif
 
 #ifdef DEBUG

@@ -13,7 +13,7 @@
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
 #include <pwd.h>
 #include <unistd.h>
 #endif

@@ -33,9 +33,38 @@ Example config:
 
 ```
 
-### vcpkg built in 
+### Prebuilt vcpkg included
 
-Now includes a vcpkg pre-built binary (stripped ~9MB), no more `vcpkg` dependency.
+Binaries under [releases](https://github.com/SerShef/BeamMP-Launcher4Linux/releases) and [AUR](https://aur.archlinux.org/packages/beammp-launcher4linux) include vcpkg as a prebuilt binary, so no package or build dependency. 
+
+### Build
+
+Linux:
+```sh
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+```
+
+Windows (tested with wine):
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static
+cmake --build build --config Release --parallel
+```
+
+macOS (run via CrossOver/Wine - not officially supported by developers and I'm unable to test) _Open an issue if there are failures building_:
+```sh
+cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=arm64-osx
+cmake --build build --config Release --parallel
+```
+
+BeamNG.drive is not supported on macOS but can be run using CrossOver/Whisky (Wine).
+
+Set `GamePath` in `Launcher.cfg` for BeamMP to work, same as Linux.
+
+### Launcher.cfg location
+
+- AUR install: `~/.local/share/beammp/Launcher.cfg` (the wrapper runs from there)
+- Prebuilt binary: the directory you run it from (current working directory)
 
 ### Install on Arch Linux (AUR):
 
@@ -62,6 +91,7 @@ by the Free Software Foundation, either version 3 of the License, or
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+
 GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License

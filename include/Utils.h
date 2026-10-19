@@ -22,7 +22,7 @@
 #include <cerrno>
 #include <cstring>
 #include <stdexcept>
-#if defined(__linux__)
+#if !defined(_WIN32)
 #include <sys/socket.h>
 #include "linuxfixes.h"
 #else
@@ -247,7 +247,7 @@ namespace Utils {
             std::string result;
             for (size_t i = 0; i < sha256_len; i++) {
                 char buf[3];
-                sprintf(buf, "%02x", sha256_value[i]);
+                snprintf(buf, sizeof(buf), "%02x", sha256_value[i]);
                 buf[2] = '\0';
                 result += buf;
             }
@@ -291,7 +291,7 @@ namespace Utils {
             std::string result;
             for (size_t i = 0; i < sha256_len; i++) {
                 char buf[3];
-                sprintf(buf, "%02x", sha256_value[i]);
+                snprintf(buf, sizeof(buf), "%02x", sha256_value[i]);
                 buf[2] = '\0';
                 result += buf;
             }

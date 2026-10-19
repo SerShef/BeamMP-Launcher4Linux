@@ -8,17 +8,16 @@ env:
 jobs:
   linux-build:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
             submodules: 'true'
-      
+
       - name: Restore artifacts, or run vcpkg, build and cache artifacts
-        uses: lukka/run-vcpkg@v7
+        uses: lukka/run-vcpkg@v11
         id: runvcpkg
         with:
-            vcpkgArguments: 'zlib nlohmann-json openssl cpp-httplib[openssl]'
             vcpkgDirectory: '${{ runner.workspace }}/b/vcpkg'
             vcpkgGitCommitId: 'b5d1a94fb7f88fd835e360fd23a45a09ceedbf48'
 

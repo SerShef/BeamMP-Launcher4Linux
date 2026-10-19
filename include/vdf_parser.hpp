@@ -120,8 +120,25 @@ namespace tyti
 
             inline std::string string_converter(const std::wstring& w) //todo: use us-locale
             {
-                std::wstring_convert<deletable_facet<std::codecvt<wchar_t, char, std::mbstate_t>>> conv1;
-                return conv1.to_bytes(w);
+                // Manual conversion to avoid wstring_convert deprecation
+                std::string result;
+                result.reserve(w.size());
+                for (wchar_t c : w) {
+                    if (c <= 0x7F) {
+                        result += static_cast<char>(c);
+                    } else {
+                        // Simple UTF-8 encoding for multi-byte characters
+                        if (c <= 0x7FF) {
+                            result += static_cast<char>(0xC0 | (c >> 6));
+                            result += static_cast<char>(0x80 | (c & 0x3F));
+                        } else {
+                            result += static_cast<char>(0xE0 | (c >> 12));
+                            result += static_cast<char>(0x80 | ((c >> 6) & 0x3F));
+                            result += static_cast<char>(0x80 | (c & 0x3F));
+                        }
+                    }
+                }
+                return result;
             }
 
             ///////////////////////////////////////////////////////////////////////////

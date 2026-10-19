@@ -1,9 +1,17 @@
 {
+  "name": "beammp-launcher",
+  "version": "2.8.1",
   "dependencies": [
-    "cpp-httplib",
-    "nlohmann-json",
     "zlib",
+    "nlohmann-json",
     "openssl",
-    "curl"
-  ]
+    "curl",
+    {
+      "name": "cpp-httplib",
+      "features": [
+        "openssl"
+      ]
+    }
+  ],
+  "builtin-baseline": "b5d1a94fb7f88fd835e360fd23a45a09ceedbf48"
 }

@@ -11,12 +11,13 @@
 #include <nlohmann/json.hpp>
 #include <string>
 #if defined(_WIN32)
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__APPLE__)
 #include <unistd.h>
-#elif defined(__APPLE__)
+#include <pwd.h>
+#if defined(__APPLE__)
 #include <libproc.h>
-#include <unistd.h>
-#endif // __APPLE__
+#endif
+#endif
 #include "Http.h"
 #include "Logger.h"
 #include "Network/network.hpp"
@@ -77,7 +78,7 @@ Version::Version(const std::array<uint8_t, 3>& v)
 beammp_fs_string GetEN() {
 #if defined(_WIN32)
     return L"BeamMP-Launcher.exe";
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__APPLE__)
     return "BeamMP-Launcher";
 #endif
 }
@@ -119,7 +120,7 @@ fs::path GetBP(const beammp_fs_char* P) {
     fspath = fs::weakly_canonical(fspath.string() + "/..");
 #if defined(_WIN32)
     return fspath.wstring();
-#else
+#elif defined(__linux__) || defined(__APPLE__)
     return fspath.string();
 #endif
 }
@@ -132,7 +133,7 @@ void ReLaunch() {
         Arg += L" ";
     }
     info("Relaunch!");
-    system("cls");
+    (void)system("cls");
     ShellExecuteW(nullptr, L"runas", (GetBP() / GetEN()).c_str(), Arg.c_str(), nullptr, SW_SHOWNORMAL);
     ShowWindow(GetConsoleWindow(), 0);
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -149,7 +150,7 @@ void URelaunch() {
     std::this_thread::sleep_for(std::chrono::seconds(1));
     exit(1);
 }
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__APPLE__)
 void ReLaunch() {
     std::string Arg;
     for (int c = 2; c <= options.argc; c++) {
@@ -157,15 +158,14 @@ void ReLaunch() {
         Arg += " ";
     }
     info("Relaunch!");
-    system("clear");
+    (void)system("clear");
     int ret = execv((GetBP() / GetEN()).c_str(), const_cast<char**>(options.argv));
     if (ret < 0) {
         error(std::string("execv() failed with: ") + strerror(errno) + ". Failed to relaunch");
         exit(1);
     }
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    exit(1);
 }
+
 void URelaunch() {
     int ret = execv((GetBP() / GetEN()).c_str(), const_cast<char**>(options.argv));
     if (ret < 0) {
@@ -180,7 +180,7 @@ void URelaunch() {
 void CheckName() {
 #if defined(_WIN32)
     std::wstring DN = GetEN(), CDir = Utils::ToWString(options.executable_name), FN = CDir.substr(CDir.find_last_of('\\') + 1);
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__APPLE__)
     std::string DN = GetEN(), CDir = options.executable_name, FN = CDir.substr(CDir.find_last_of('/') + 1);
 #endif
     if (FN != DN) {
@@ -352,9 +352,9 @@ void CheckForUpdates(const std::string& CV) {
     if (FileHash != LatestHash && IsOutdated(Version(VersionStrToInts(GetVer() + GetPatch())), Version(VersionStrToInts(LatestVersion)))) {
         if (!options.no_update) {
             info("Launcher update " + LatestVersion + " found!");
-#if defined(__linux__)
-            error("Auto update is NOT implemented for the Linux version. Please update manually ASAP as updates contain security patches.");
-#else
+#if defined(__linux__) || defined(__APPLE__)
+            error("Auto update is NOT implemented for this platform. Please update manually ASAP as updates contain security patches.");
+#elif defined(_WIN32)
             info("Downloading Launcher update " + LatestHash);
             std::wstring DownloadLocation = GetBP() / (beammp_wide("new_") + GetEN());
             if (HTTP::Download(
@@ -443,7 +443,7 @@ void InitLauncher() {
     CheckLocalKey();
     CheckForUpdates(std::string(GetVer()) + GetPatch());
 }
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__APPLE__)
 
 void InitLauncher() {
     info("BeamMP Launcher v" + GetVer() + GetPatch());
@@ -539,8 +539,8 @@ void PreGame(const beammp_fs_string& GamePath) {
         }
 #if defined(_WIN32)
         std::wstring ZipPath(GetGamePath() / LR"(mods\multiplayer\BeamMP.zip)");
-#elif defined(__linux__)
-        // Linux version of the game cant handle mods with uppercase names
+#elif defined(__linux__) || defined(__APPLE__)
+        // Linux/macOS version of the game cant handle mods with uppercase names
         std::string ZipPath(GetGamePath() / R"(mods/multiplayer/beammp.zip)");
 #endif
 

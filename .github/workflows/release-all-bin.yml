@@ -16,12 +16,11 @@ jobs:
   linux-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: 'true'
-      - uses: lukka/run-vcpkg@v7
+      - uses: lukka/run-vcpkg@v11
         with:
-          vcpkgArguments: 'zlib nlohmann-json openssl cpp-httplib[openssl]'
           vcpkgDirectory: '${{ runner.workspace }}/b/vcpkg'
           vcpkgGitCommitId: 'b5d1a94fb7f88fd835e360fd23a45a09ceedbf48'
       - name: Configure CMake
@@ -50,15 +49,13 @@ jobs:
   windows-release:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: 'true'
-      - uses: lukka/run-vcpkg@v7
+      - uses: lukka/run-vcpkg@v11
         with:
-          vcpkgArguments: 'zlib nlohmann-json openssl cpp-httplib[openssl]'
           vcpkgDirectory: '${{ runner.workspace }}/b/vcpkg'
           vcpkgGitCommitId: 'b5d1a94fb7f88fd835e360fd23a45a09ceedbf48'
-          vcpkgTriplet: 'x64-windows-static'
       - name: Configure CMake
         shell: bash
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE='${{ runner.workspace }}/b/vcpkg/scripts/buildsystems/vcpkg.cmake' -DVCPKG_TARGET_TRIPLET=x64-windows-static
@@ -83,3 +80,48 @@ jobs:
           files: |
             build/Release/BeamMP-Launcher.exe
             build/Release/BeamMP-Launcher.exe.sha256
+
+
+  macos-release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
+      - uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: '${{ runner.workspace }}/b/vcpkg'
+          vcpkgGitCommitId: 'b5d1a94fb7f88fd835e360fd23a45a09ceedbf48'
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE='${{ runner.workspace }}/b/vcpkg/scripts/buildsystems/vcpkg.cmake' -DVCPKG_TARGET_TRIPLET=arm64-osx
+      - name: Build
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+      - name: Strip and checksum
+        id: strip
+        run: |
+          echo "=== Listing build directory ==="
+          find build -type f -name "*" | sort
+          BIN=$(find build -name "BeamMP-Launcher" -type f | head -1)
+          echo "BIN='$BIN'"
+          if [ -z "$BIN" ]; then echo "Binary not found"; exit 1; fi
+          echo "File exists: $(test -f "$BIN" && echo yes || echo no)"
+          echo "File size: $(stat -c%s "$BIN" 2>/dev/null || stat -f%z "$BIN" 2>/dev/null || echo unknown)"
+          strip "$BIN"
+          SHA="${BIN}.sha256"
+          cd "$(dirname "$BIN")" && shasum -a 256 "$(basename "$BIN")" > "$(basename "$BIN").sha256"
+          echo "bin=$BIN" >> $GITHUB_OUTPUT
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BeamMP-Launcher-macos
+          path: |
+            ${{ steps.strip.outputs.bin }}
+            ${{ steps.strip.outputs.sha }}
+      - name: Upload (tag only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ steps.strip.outputs.bin }}
+            ${{ steps.strip.outputs.sha }}

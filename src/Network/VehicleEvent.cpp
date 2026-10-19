@@ -13,7 +13,8 @@
 
 #if defined(_WIN32)
 #include <ws2tcpip.h>
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__APPLE__)
+#include "linuxfixes.h"
 #include <arpa/inet.h>
 #include <cstring>
 #include <errno.h>
@@ -22,11 +23,21 @@
 #include <sys/types.h>
 #endif
 
+#if !defined(_WIN32) && !defined(WSACleanup)
+#define WSAGetLastError() errno
+#define WSACleanup() do {} while(0)
+#define INVALID_SOCKET (static_cast<SOCKET>(-1))
+#endif
+
 #include "Network/network.hpp"
 
 int LastPort;
 std::string LastIP;
+#if defined(_WIN32)
+SOCKET TCPSock = INVALID_SOCKET;
+#else
 SOCKET TCPSock = -1;
+#endif
 
 bool CheckBytes(int32_t Bytes, int32_t Expected) {
     if (Bytes == 0) {
@@ -153,15 +164,19 @@ void TCPClientMain(const std::string& IP, int Port) {
     LastPort = Port;
     SOCKADDR_IN ServerAddr;
     int RetCode;
-#ifdef _WIN32
+
+#if defined(_WIN32)
     WSADATA wsaData;
     WSAStartup(514, &wsaData); // 2.2
 #endif
+
     TCPSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     if (TCPSock == -1) {
         printf("Client: socket failed! Error code: %d\n", WSAGetLastError());
+#if defined(_WIN32)
         WSACleanup();
+#endif
         return;
     }
 
@@ -173,7 +188,9 @@ void TCPClientMain(const std::string& IP, int Port) {
         UlStatus = "UlConnection Failed!";
         error("Client: connect failed! Error code: " + std::to_string(WSAGetLastError()));
         KillSocket(TCPSock);
+#if defined(_WIN32)
         WSACleanup();
+#endif
         Terminate = true;
         CoreSend("L");
         return;

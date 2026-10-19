@@ -8,13 +8,14 @@
 #include "Utils.h"
 #if defined(_WIN32)
 #include <shlobj.h>
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__APPLE__)
 #include "vdf_parser.hpp"
 #include <pwd.h>
 #include <spawn.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+extern char** environ;
 #endif
 
 #include "Logger.h"
@@ -22,7 +23,9 @@
 #include "Startup.h"
 #include <Security/Init.h>
 #include <filesystem>
+#include <string>
 #include <thread>
+#include <vector>
 
 #include <fstream>
 
@@ -115,7 +118,7 @@ std::filesystem::path GetGamePath() {
     Path /= Utils::ToWString("current");
     return Path;
 }
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__APPLE__)
 std::filesystem::path GetGamePath() {
     // Right now only steam is supported
     struct passwd* pw = getpwuid(getuid());
@@ -129,6 +132,32 @@ std::filesystem::path GetGamePath() {
 }
 #endif
 
+// The in-game BeamMP mod resolves the launcher's address from `settings.launcherPort` and
+// falls back to 4444 when that setting is unset, while the launcher itself always listens on
+// `options.port`. BeamNG applies `-key value` pairs from the command line as setting overrides,
+// so injecting the port here keeps both sides in lockstep. Without this, any non-default `Port`
+// in Launcher.cfg leaves the game dialling a port nobody is listening on, which surfaces as
+// "The game is not connected to the launcher!".
+static std::vector<std::string> GetLauncherPortArgs() {
+    std::vector<std::string> args;
+
+    for (int i = 0; i < options.game_arguments_length; i++) {
+        const char* a = options.game_arguments[i];
+        if (a && std::string(a) == "-launcherPort") {
+            info("Game arguments already set -launcherPort; leaving the user's value untouched.");
+            return {};
+        }
+    }
+
+    if (options.port != 4444) {
+        info("Non-default port " + std::to_string(options.port) + ": passing -launcherPort to the game so it finds this launcher.");
+    }
+
+    args.emplace_back("-launcherPort");
+    args.emplace_back(std::to_string(options.port));
+    return args;
+}
+
 #if defined(_WIN32)
 void StartGame(std::wstring Dir) {
     BOOL bSuccess = FALSE;
@@ -140,10 +169,17 @@ void StartGame(std::wstring Dir) {
     Dir += L"\\BeamNG.drive.exe";
     std::wstring gameArgs = L"";
 
+    for (const std::string& a : GetLauncherPortArgs()) {
+        gameArgs += L" ";
+        gameArgs += Utils::ToWString(a);
+    }
+
     for (int i = 0; i < options.game_arguments_length; i++) {
         gameArgs += L" ";
         gameArgs += Utils::ToWString(options.game_arguments[i]);
     }
+
+    debug(L"BeamNG launch arguments: " + gameArgs);
 
     debug(L"BeamNG executable path: " + Dir);
 
@@ -172,16 +208,27 @@ void StartGame(std::wstring Dir) {
     std::this_thread::sleep_for(std::chrono::seconds(5));
     exit(2);
 }
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__APPLE__)
 void StartGame(std::string Dir) {
     std::string filename = (Dir + "/BinLinux/BeamNG.drive.x64");
-    std::vector<const char*> argv;
-    argv.push_back(filename.data());
+
+    // Own the argument strings so the char* handed to posix_spawn stays valid.
+    std::vector<std::string> owned = GetLauncherPortArgs();
     for (int i = 0; i < options.game_arguments_length; i++) {
-        argv.push_back(options.game_arguments[i]);
+        owned.emplace_back(options.game_arguments[i]);
     }
 
+    std::vector<const char*> argv;
+    argv.reserve(owned.size() + 2);
+    argv.push_back(filename.c_str());
+    for (const std::string& a : owned) {
+        argv.push_back(a.c_str());
+    }
     argv.push_back(nullptr);
+
+    debug("BeamNG launch arguments: " + (owned.empty() ? std::string("(none)") : owned.front()) +
+          (owned.size() > 1 && owned.front() == "-launcherPort" ? " " + owned[1] : std::string()));
+
     pid_t pid;
 
     posix_spawn_file_actions_t file_actions;
@@ -213,6 +260,13 @@ void StartGame(std::string Dir) {
     std::this_thread::sleep_for(std::chrono::seconds(5));
     exit(2);
 }
+#endif
+
+// Forward declarations for std::thread
+#if defined(_WIN32)
+void StartGame(std::wstring Dir);
+#else
+void StartGame(std::string Dir);
 #endif
 
 void InitGame(const beammp_fs_string& Dir) {

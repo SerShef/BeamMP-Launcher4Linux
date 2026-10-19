@@ -11,6 +11,10 @@ endif(WIN32)
 set(CMAKE_CXX_STANDARD 20)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
+if (NOT MSVC)
+    # GCC/Clang: silence std::wstring_convert / getenv deprecation noise
+    add_compile_options(-Wno-deprecated-declarations)
+endif()
 
 add_compile_definitions(CPPHTTPLIB_OPENSSL_SUPPORT)
 
@@ -30,11 +34,17 @@ if (WIN32)
 elseif (UNIX)
     find_package(ZLIB REQUIRED)
     find_package(OpenSSL REQUIRED)
-    target_link_libraries(${PROJECT_NAME} PRIVATE
-            ZLIB::ZLIB OpenSSL::SSL OpenSSL::Crypto CURL::libcurl)
+    if (APPLE)
+        find_library(SECURITY Security)
+        target_link_libraries(${PROJECT_NAME} PRIVATE
+                ZLIB::ZLIB OpenSSL::SSL OpenSSL::Crypto CURL::libcurl ${SECURITY})
+    else()
+        target_link_libraries(${PROJECT_NAME} PRIVATE
+                ZLIB::ZLIB OpenSSL::SSL OpenSSL::Crypto CURL::libcurl)
+    endif()
 else(WIN32) #MINGW
     add_definitions("-D_WIN32_WINNT=0x0600")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os -s --static")
     target_link_libraries(${PROJECT_NAME} ssl crypto ws2_32 ssp crypt32 z CURL::libcurl)
 endif(WIN32)
-target_include_directories(${PROJECT_NAME} PRIVATE "include")
+target_include_directories(${PROJECT_NAME} PRIVATE "include" "/home/chef/share/include")
